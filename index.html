@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>インセイン キャラクター駒生成ツール for ココフォリア</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <p class="eyebrow">MULTI-GENRE HORROR RPG</p>
+      <h1>インセイン<br><span>キャラクター駒生成ツール</span></h1>
+      <p class="lead">「逢魔人の名簿」の共有URLから、ココフォリアに貼り付けられるキャラクター駒JSONを生成します。</p>
+    </header>
+
+    <section class="card">
+      <label for="sheetUrl">キャラクターシートURL</label>
+      <div class="row">
+        <input id="sheetUrl" type="url" placeholder="https://character-sheets.appspot.com/insane/edit.html?key=..." />
+        <button id="loadBtn" class="primary">読み込む</button>
+      </div>
+      <p id="status" class="status">URLを貼り付けて「読み込む」を押してください。</p>
+      <details>
+        <summary>URL読み込みが失敗した場合</summary>
+        <p>ブラウザ側のCORS制限などで直接取得できない場合は、下欄へキャラクターシートのJSONを貼り付けて読み込めます。</p>
+        <textarea id="rawJson" rows="8" placeholder='{"name":"..."}'></textarea>
+        <button id="loadJsonBtn">JSONから読み込む</button>
+      </details>
+    </section>
+
+    <section id="preview" class="card hidden">
+      <div class="section-title"><h2>キャラクター</h2><button id="resetBtn" class="ghost">リセット</button></div>
+      <div class="grid two">
+        <label>名前<input id="name" /></label>
+        <label>プレイヤー<input id="player" /></label>
+        <label>年齢<input id="age" /></label>
+        <label>性別<input id="sex" /></label>
+        <label>職業<input id="job" /></label>
+        <label>参照URL<input id="sourceUrl" /></label>
+      </div>
+
+      <h3>ステータス</h3>
+      <div class="grid two compact">
+        <label>生命力・現在値<input id="life" type="number" /></label>
+        <label>生命力・最大値<input id="lifeMax" type="number" /></label>
+        <label>正気度・現在値<input id="sanity" type="number" /></label>
+        <label>正気度・最大値<input id="sanityMax" type="number" /></label>
+      </div>
+
+      <h3>インセイン情報</h3>
+      <div class="grid two">
+        <label>好奇心<input id="curiosity" /></label>
+        <label>恐怖心<input id="fear" /></label>
+        <label class="wide">設定<textarea id="memo" rows="5"></textarea></label>
+      </div>
+
+      <div class="options">
+        <label><input id="includeProfile" type="checkbox" checked> 年齢・性別・職業をメモに入れる</label>
+        <label><input id="includeAbilities" type="checkbox" checked> アビリティをチャットパレットに入れる</label>
+        <label><input id="includeSkills" type="checkbox" checked> 習得特技をチャットパレットに入れる</label>
+        <label><input id="includeParams" type="checkbox" checked> 好奇心・恐怖心をパラメータに入れる</label>
+      </div>
+
+      <h3>チャットパレット</h3>
+      <textarea id="commands" rows="12"></textarea>
+
+      <div class="actions">
+        <button id="copyBtn" class="primary big">ココフォリア用データをコピー</button>
+        <button id="showBtn">JSONを表示</button>
+      </div>
+      <pre id="jsonOut" class="json hidden"></pre>
+    </section>
+
+    <footer>
+      <p>非公式ファンメイドツールです。「マルチジャンル・ホラーRPG インセイン」は冒険企画局の著作物です。</p>
+    </footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
