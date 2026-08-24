@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>インセイン キャラクター駒生成ツール v0.5</title>
+<title>インセイン キャラクター駒生成ツール v0.6</title>
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0c0a11;color:#f8f4ff;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
 main{max-width:1050px;margin:auto;padding:36px 20px 60px}.sub{color:#c9bfd3}.card{background:#1b1622;border:1px solid #45384f;border-radius:18px;padding:24px;margin:20px 0}
@@ -13,7 +13,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#09070c;border-radius:
 @media(max-width:700px){.grid{grid-template-columns:1fr}}
 </style></head>
 <body><main>
-<p class="sub">MULTI-GENRE HORROR RPG</p><h1>インセイン<br>キャラクター駒生成ツール <small>v0.5</small></h1>
+<p class="sub">MULTI-GENRE HORROR RPG</p><h1>インセイン<br>キャラクター駒生成ツール <small>v0.6</small></h1>
 <p>キャラクターシート倉庫のインセイン用URLから、ココフォリアへ貼り付けられるキャラクター駒データを生成します。</p>
 
 <section class="card">
@@ -87,6 +87,12 @@ function output(){
  // Requested CCFOLIA display: no HP/SAN status. Six Insane fields + extra HP only.
  let statuses=fieldLabels.map(label=>({label,value:1,max:1}));
  statuses.push({label:"追加生命力",value:0,max:0});
+ statuses.push({
+   label:"正気度",
+   value:Number(data.sanepoint?.value||0),
+   max:Number(data.sanepoint?.max||0)
+ });
+ statuses.push({label:"狂気カード",value:0,max:0});
  let params=[["好奇心",curiosityName(b.curiosity)],["恐怖心",b.nightmare]].filter(x=>x[1]).map(([label,value])=>({label,value}));
  return {kind:"character",data:{name:$("name").value||"名称未設定",memo,initiative:0,externalUrl:$("refurl").value,status:statuses,params,active:true,secret:false,invisible:false,hideStatus:false,color:"#ffffff",commands:$("commands").value}};
 }
