@@ -11,7 +11,7 @@
     <header>
       <p class="eyebrow">MULTI-GENRE HORROR RPG</p>
       <h1>インセイン<br><span>キャラクター駒生成ツール</span></h1>
-      <p class="lead">「逢魔人の名簿」の共有URLから、ココフォリアに貼り付けられるキャラクター駒JSONを生成します。</p>
+      <p class="lead">「キャラクターシート倉庫」のインセイン用キャラクターシートURLから、ココフォリアに貼り付けられるキャラクター駒JSONを生成します。</p>
     </header>
 
     <section class="card">
@@ -22,9 +22,9 @@
       </div>
       <p id="status" class="status">URLを貼り付けて「読み込む」を押してください。</p>
       <details>
-        <summary>URL読み込みが失敗した場合</summary>
-        <p>ブラウザ側のCORS制限などで直接取得できない場合は、下欄へキャラクターシートのJSONを貼り付けて読み込めます。</p>
-        <textarea id="rawJson" rows="8" placeholder='{"name":"..."}'></textarea>
+        <summary>うまく読み込めない場合</summary>
+        <p>URLに <code>key=...</code> が含まれているか確認してください。編集URL・表示URLのどちらでも読み込めます。</p>
+        <textarea id="rawJson" rows="8" placeholder='非常用：取得したJSONを貼り付け'></textarea>
         <button id="loadJsonBtn">JSONから読み込む</button>
       </details>
     </section>
