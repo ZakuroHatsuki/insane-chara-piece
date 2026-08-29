@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>インセイン キャラクター駒生成ツール v0.6</title>
+<title>インセイン キャラクター駒生成ツール v0.7</title>
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0c0a11;color:#f8f4ff;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
 main{max-width:1050px;margin:auto;padding:36px 20px 60px}.sub{color:#c9bfd3}.card{background:#1b1622;border:1px solid #45384f;border-radius:18px;padding:24px;margin:20px 0}
@@ -13,7 +13,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#09070c;border-radius:
 @media(max-width:700px){.grid{grid-template-columns:1fr}}
 </style></head>
 <body><main>
-<p class="sub">MULTI-GENRE HORROR RPG</p><h1>インセイン<br>キャラクター駒生成ツール <small>v0.6</small></h1>
+<p class="sub">MULTI-GENRE HORROR RPG</p><h1>インセイン<br>キャラクター駒生成ツール <small>v0.7</small></h1>
 <p>キャラクターシート倉庫のインセイン用URLから、ココフォリアへ貼り付けられるキャラクター駒データを生成します。</p>
 
 <section class="card">
@@ -76,7 +76,7 @@ function render(data){
  $("abilities").innerHTML=(data.ability||[]).filter(a=>a?.name).map(a=>'<span class=chip>【'+esc(a.name)+'】 '+esc(a.type)+(a.targetSkill?' / 《'+esc(a.targetSkill)+'》':'')+'</span>').join("");
  let held=(data.item||[]).filter(i=>i?.name && Number(i.count||0)>0);
  $("items").innerHTML=held.map(i=>'<span class=chip>'+esc(i.name)+' × '+Number(i.count)+'</span>').join("")||"<span class=chip>なし</span>";
- let cmd=["2D6>=5 【基本判定】","","//暴力","//情動","//知覚","//技術","//知識","//怪異","//追加生命力"];
+ let cmd=["2D6>=5 【基本判定】","","//生命力","//正気度","//狂気カード"];
  if(learned.length)cmd.push("","### 習得特技",...learned.map(x=>"2D6>=5 《"+x+"》"));
  let abs=(data.ability||[]).filter(a=>a?.name);if(abs.length)cmd.push("","### アビリティ",...abs.map(a=>"【"+a.name+"】"+(a.targetSkill?" 指定特技：《"+a.targetSkill+"》":"")));
  $("commands").value=cmd.join("\n");$("result").hidden=false;
@@ -85,14 +85,23 @@ function output(){
  let data=raw||{},b=data.base||{};
  let memo=[b.age&&"年齢："+b.age,b.sex&&"性別："+b.sex,b.cover&&"職業："+b.cover,b.character1?.name&&"性格："+b.character1.name].filter(Boolean).join(" ");
  // Requested CCFOLIA display: no HP/SAN status. Six Insane fields + extra HP only.
- let statuses=fieldLabels.map(label=>({label,value:1,max:1}));
- statuses.push({label:"追加生命力",value:0,max:0});
- statuses.push({
-   label:"正気度",
-   value:Number(data.sanepoint?.value||0),
-   max:Number(data.sanepoint?.max||0)
- });
- statuses.push({label:"狂気カード",value:0,max:0});
+ let statuses=[
+   {
+     label:"生命力",
+     value:Number(data.hitpoint?.value||0),
+     max:Number(data.hitpoint?.max||0)
+   },
+   {
+     label:"正気度",
+     value:Number(data.sanepoint?.value||0),
+     max:Number(data.sanepoint?.max||0)
+   },
+   {
+     label:"狂気カード",
+     value:0,
+     max:0
+   }
+ ];
  let params=[["好奇心",curiosityName(b.curiosity)],["恐怖心",b.nightmare]].filter(x=>x[1]).map(([label,value])=>({label,value}));
  return {kind:"character",data:{name:$("name").value||"名称未設定",memo,initiative:0,externalUrl:$("refurl").value,status:statuses,params,active:true,secret:false,invisible:false,hideStatus:false,color:"#ffffff",commands:$("commands").value}};
 }
