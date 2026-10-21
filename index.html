@@ -2,22 +2,22 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>インセイン キャラクター駒生成ツール v0.7</title>
+<title>TRPG キャラクター駒生成ツール</title>
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0c0a11;color:#f8f4ff;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
 main{max-width:1050px;margin:auto;padding:36px 20px 60px}.sub{color:#c9bfd3}.card{background:#1b1622;border:1px solid #45384f;border-radius:18px;padding:24px;margin:20px 0}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.full{grid-column:1/-1}label{display:block;margin-bottom:6px}input,textarea{width:100%;padding:11px 12px;border-radius:10px;border:1px solid #62516f;background:#0d0a11;color:#fff;font:inherit}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.full{grid-column:1/-1}label{display:block;margin-bottom:6px}input,textarea,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid #62516f;background:#0d0a11;color:#fff;font:inherit}
 textarea{min-height:160px}button{border:0;border-radius:11px;padding:12px 18px;font:inherit;font-weight:700;cursor:pointer;background:#b576ff;color:#100817;margin:8px 8px 8px 0}.secondary{background:#30283a;color:#fff;border:1px solid #655570}
 .status{margin:10px 0}.ok{color:#8cefa6}.err{color:#ff8d9a}.chips{display:flex;gap:8px;flex-wrap:wrap}.chip{background:#2b2235;padding:7px 10px;border-radius:999px}
 pre{white-space:pre-wrap;word-break:break-word;background:#09070c;border-radius:10px;padding:14px;max-height:440px;overflow:auto}
 @media(max-width:700px){.grid{grid-template-columns:1fr}}
 </style></head>
 <body><main>
-<p class="sub">MULTI-GENRE HORROR RPG</p><h1>インセイン<br>キャラクター駒生成ツール <small>v0.7</small></h1>
-<p>キャラクターシート倉庫のインセイン用URLから、ココフォリアへ貼り付けられるキャラクター駒データを生成します。</p>
+<p class="sub">MULTI-GENRE HORROR RPG</p><h1>TRPG<br>キャラクター駒生成ツール <small>v1.0</small></h1>
+<p>キャラクターシート倉庫から、インセイン／シノビガミのココフォリア・CatsUdon用駒データを生成します。</p>
 
 <section class="card">
-<label>キャラクターシートURL</label>
+<label>ゲームシステム</label><select id="game"><option value="auto">URLから自動判別</option><option value="insane">インセイン</option><option value="shinobigami">シノビガミ</option></select><label style="margin-top:16px">キャラクターシートURL</label>
 <input id="url" placeholder="https://character-sheets.appspot.com/insane/edit.html?key=...">
 <button id="load">読み込む</button><button id="reset" class="secondary">リセット</button>
 <div id="statusmsg" class="status"></div>
@@ -29,9 +29,9 @@ pre{white-space:pre-wrap;word-break:break-word;background:#09070c;border-radius:
 <div><label>名前</label><input id="name"></div><div><label>プレイヤー</label><input id="player"></div>
 <div><label>年齢</label><input id="age"></div><div><label>性別</label><input id="sex"></div>
 <div><label>職業</label><input id="cover"></div><div><label>参照URL</label><input id="refurl"></div>
-<div><label>生命力（キャラシ確認用）</label><input id="hp"></div><div><label>正気度（キャラシ確認用）</label><input id="san"></div>
-<div><label>好奇心</label><input id="curiosity"></div><div><label>恐怖心</label><input id="nightmare"></div>
-</div>
+<div id="hpWrap"><label>生命力（キャラシ確認用）</label><input id="hp"></div><div id="sanWrap"><label>正気度（キャラシ確認用）</label><input id="san"></div>
+<div id="curiosityWrap"><label>好奇心</label><input id="curiosity"></div><div id="nightmareWrap"><label>恐怖心</label><input id="nightmare"></div>
+</div><div id="shinobiStatus" hidden><h3>シノビガミ ステータス（現在値／最大値）</h3><div id="shinobiFields" class="grid"></div></div>
 <h3>習得特技</h3><div id="learned" class="chips"></div>
 <h3>アビリティ</h3><div id="abilities" class="chips"></div>
 <h3>所持アイテム</h3><div id="items" class="chips"></div>
@@ -42,7 +42,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:#09070c;border-radius:
 </section>
 </main>
 <script>
-let raw=null;
+let raw=null, currentGame="insane";
 const $=x=>document.getElementById(x);
 const skillTable=[
 ["焼却","恋","痛み","分解","物理学","時間"],
@@ -61,14 +61,25 @@ const curiosityMap={a:"暴力",ab:"情動",b:"情動",bc:"知覚",c:"知覚",cd:
 const fieldLabels=["暴力","情動","知覚","技術","知識","怪異"];
 
 function getKey(v){try{return new URL(v).searchParams.get("key")||""}catch(e){let m=String(v).match(/[?&]key=([^&#]+)/);return m?decodeURIComponent(m[1]):""}}
-function jsonp(key){return new Promise((resolve,reject)=>{let cb="insane_"+Date.now()+"_"+Math.random().toString(36).slice(2),s=document.createElement("script"),t=setTimeout(()=>done(new Error("タイムアウトしました")),15000);
+function jsonp(key,game){return new Promise((resolve,reject)=>{let cb="insane_"+Date.now()+"_"+Math.random().toString(36).slice(2),s=document.createElement("script"),t=setTimeout(()=>done(new Error("タイムアウトしました")),15000);
 function done(e,d){clearTimeout(t);try{delete window[cb]}catch(_){window[cb]=undefined}s.remove();e?reject(e):resolve(d)}
-window[cb]=d=>done(null,d);s.onerror=()=>done(new Error("データ取得に失敗しました"));s.src="https://character-sheets.appspot.com/insane/display?ajax=1&key="+encodeURIComponent(key)+"&callback="+encodeURIComponent(cb);document.head.appendChild(s)})}
+window[cb]=d=>done(null,d);s.onerror=()=>done(new Error("データ取得に失敗しました"));s.src="https://character-sheets.appspot.com/"+game+"/display?ajax=1&key="+encodeURIComponent(key)+"&callback="+encodeURIComponent(cb);document.head.appendChild(s)})}
 function learnedNames(data){return (data.learned||[]).map(x=>x&&x.id).filter(Boolean).map(id=>{let m=id.match(/skills\.row(\d+)\.name(\d+)/);if(!m)return null;return skillTable[+m[1]]?.[+m[2]]||null}).filter(Boolean)}
 function curiosityName(code){return curiosityMap[code]||code||""}
 function esc(v){return v==null?"":String(v)}
+const shinobiLabels=["器術","体術","忍術","謀術","戦術","妖術","追加生命力"];
+function chosenGame(){
+ const v=$("game").value;
+ if(v!=="auto")return v;
+ try{const path=new URL($("url").value.trim()).pathname;return path.startsWith("/shinobigami/")?"shinobigami":path.startsWith("/insane/")?"insane":""}catch(e){return ""}
+}
 function render(data){
- raw=data;let b=data.base||{},learned=learnedNames(data);
+ raw=data;let b=data.base||{},learned=currentGame==="insane"?learnedNames(data):[];
+ $("shinobiStatus").hidden=currentGame!=="shinobigami";
+ for(const id of ["hpWrap","sanWrap","curiosityWrap","nightmareWrap"])$(id).hidden=currentGame==="shinobigami";
+ if(currentGame==="shinobigami"){
+   $("shinobiFields").innerHTML=shinobiLabels.map((label,i)=>'<div><label>'+label+'</label><div style="display:flex;gap:8px"><input aria-label="'+label+' 現在値" type="number" min="0" id="sval'+i+'" value="'+(i===6?0:1)+'"><span style="align-self:center">/</span><input aria-label="'+label+' 最大値" type="number" min="0" id="smax'+i+'" value="'+(i===6?0:1)+'"></div></div>').join("");
+ }
  $("name").value=esc(b.name);$("player").value=esc(b.player);$("age").value=esc(b.age);$("sex").value=esc(b.sex);$("cover").value=esc(b.cover);$("refurl").value=$("url").value;
  $("hp").value=esc(data.hitpoint?.value)+"/"+esc(data.hitpoint?.max);$("san").value=esc(data.sanepoint?.value)+"/"+esc(data.sanepoint?.max);
  $("curiosity").value=curiosityName(b.curiosity);$("nightmare").value=esc(b.nightmare);
@@ -76,7 +87,7 @@ function render(data){
  $("abilities").innerHTML=(data.ability||[]).filter(a=>a?.name).map(a=>'<span class=chip>【'+esc(a.name)+'】 '+esc(a.type)+(a.targetSkill?' / 《'+esc(a.targetSkill)+'》':'')+'</span>').join("");
  let held=(data.item||[]).filter(i=>i?.name && Number(i.count||0)>0);
  $("items").innerHTML=held.map(i=>'<span class=chip>'+esc(i.name)+' × '+Number(i.count)+'</span>').join("")||"<span class=chip>なし</span>";
- let cmd=["2D6>=5 【基本判定】","","//生命力","//正気度","//狂気カード"];
+ let cmd=currentGame==="insane"?["2D6>=5 【基本判定】","","//生命力","//正気度","//狂気カード"]:["SG>=5 【基本判定】","","//器術","//体術","//忍術","//謀術","//戦術","//妖術","//追加生命力"];
  if(learned.length)cmd.push("","### 習得特技",...learned.map(x=>"2D6>=5 《"+x+"》"));
  let abs=(data.ability||[]).filter(a=>a?.name);if(abs.length)cmd.push("","### アビリティ",...abs.map(a=>"【"+a.name+"】"+(a.targetSkill?" 指定特技：《"+a.targetSkill+"》":"")));
  $("commands").value=cmd.join("\n");$("result").hidden=false;
@@ -102,11 +113,14 @@ function output(){
      max:0
    }
  ];
- let params=[["好奇心",curiosityName(b.curiosity)],["恐怖心",b.nightmare]].filter(x=>x[1]).map(([label,value])=>({label,value}));
+ if(currentGame==="shinobigami"){
+   statuses=shinobiLabels.map((label,i)=>({label,value:Math.max(0,Number($("sval"+i).value)||0),max:Math.max(0,Number($("smax"+i).value)||0)}));
+ }
+ let params=currentGame==="insane"?[["好奇心",curiosityName(b.curiosity)],["恐怖心",b.nightmare]].filter(x=>x[1]).map(([label,value])=>({label,value})):[];
  return {kind:"character",data:{name:$("name").value||"名称未設定",memo,initiative:0,externalUrl:$("refurl").value,status:statuses,params,active:true,secret:false,invisible:false,hideStatus:false,color:"#ffffff",commands:$("commands").value}};
 }
-$("load").onclick=async()=>{let key=getKey($("url").value.trim());if(!key){$("statusmsg").textContent="URLからkeyを取得できませんでした。";$("statusmsg").className="status err";return}$("statusmsg").textContent="読み込み中…";try{let d=await jsonp(key);render(d);$("statusmsg").textContent="読み込み成功！";$("statusmsg").className="status ok"}catch(e){$("statusmsg").textContent="取得失敗："+e.message;$("statusmsg").className="status err"}};
-$("copy").onclick=async()=>{await navigator.clipboard.writeText(JSON.stringify(output()));$("statusmsg").textContent="コピーしました。ココフォリアの盤面で Ctrl+V してください。";$("statusmsg").className="status ok"};
+$("load").onclick=async()=>{let key=getKey($("url").value.trim());currentGame=chosenGame();if(!currentGame){$("statusmsg").textContent="シノビガミまたはインセインのURLを入力するか、ゲームを選択してください。";$("statusmsg").className="status err";return}if(!key){$("statusmsg").textContent="URLからkeyを取得できませんでした。";$("statusmsg").className="status err";return}$("statusmsg").textContent="読み込み中…";try{let d=await jsonp(key,currentGame);render(d);$("statusmsg").textContent="読み込み成功！";$("statusmsg").className="status ok"}catch(e){$("statusmsg").textContent="取得失敗："+e.message;$("statusmsg").className="status err"}};
+$("copy").onclick=async()=>{await navigator.clipboard.writeText(JSON.stringify(output()));$("statusmsg").textContent="コピーしました。ココフォリア／CatsUdonで利用できます。";$("statusmsg").className="status ok"};
 $("show").onclick=()=>{$("json").hidden=!$("json").hidden;$("json").textContent=JSON.stringify(output(),null,2)};
 $("reset").onclick=()=>{raw=null;$("url").value="";$("result").hidden=true;$("statusmsg").textContent=""};
 </script></body></html>
